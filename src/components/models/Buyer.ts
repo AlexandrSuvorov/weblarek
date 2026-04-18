@@ -1,7 +1,7 @@
 import type { IBuyer } from "../../types";
 
 const emptyData: IBuyer = {
-  payment: "card",
+  payment: null,
   address: "",
   phone: "",
   email: "",
@@ -40,10 +40,8 @@ export class Buyer {
 
     if (!email.trim()) {
       errors.email = "Email обязателен";
-    } else if (!/^\S+@\S+\.\S+$/.test(email)) {
-      errors.email = "Некорректный email";
-    }
-
+    } 
+    
     if (!payment) {
       errors.payment = "Способ оплаты обязателен";
     }

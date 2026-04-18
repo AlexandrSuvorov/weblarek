@@ -18,12 +18,7 @@ export class Catalog {
   }
 
   get selectedProduct(): IProduct | null {
-    const foundItem = this.selectedItem;
-    if (foundItem !== null) {
-      return foundItem;
-    } else {
-      return null;
-    }
+    return this.selectedItem;
   }
 
   set selectedProduct(item: IProduct) {
