@@ -1,13 +1,11 @@
 import type { IProduct } from "../../types";
+import { IEvents } from "../base/Events";
 
 export class Catalog {
   private items: IProduct[] = [];
-  private selectedItem: IProduct | null;
+  private selectedItem: IProduct | null = null;
 
-  constructor() {
-    this.items = [];
-    this.selectedItem = null;
-  }
+  constructor(protected events: IEvents) {}
 
   get catalogItems(): IProduct[] {
     return this.items;
@@ -15,14 +13,17 @@ export class Catalog {
 
   set catalogItems(items: IProduct[]) {
     this.items = items;
+    this.events.emit(`catalog:changed`);
   }
 
   get selectedProduct(): IProduct | null {
     return this.selectedItem;
   }
 
-  set selectedProduct(item: IProduct) {
-    this.selectedItem = item;
+  set selectedProduct(item: string) {
+    const product = this.getSelectedItem(item);
+    this.selectedItem = product ?? null;
+    this.events.emit('card:select');
   }
 
   getSelectedItem(id: string): IProduct | null {

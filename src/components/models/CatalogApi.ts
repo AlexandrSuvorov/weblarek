@@ -1,17 +1,15 @@
-import type {IOrder, ICatalogFromApi, IApi, IOrderResult} from "../../types";
+import { ICatalogFromApi, IOrder, IOrderResult, IProduct } from "../../types";
+import { Api } from "../base/Api.ts";
 
 export class CatalogApi {
-    private api: IApi;
-
-    constructor(api: IApi) {
-        this.api = api;
-    }
-
-    async getCatalogProducts(): Promise<ICatalogFromApi> {
-        return this.api.get('/product');
-    }
-
-    async postOrder(value: IOrder): Promise<IOrderResult> {
-        return this.api.post<IOrderResult>('/order', value);
-    }
+  private api: Api;
+  constructor(api: Api) {
+    this.api = api;
+  }
+  getCatalogItems(): Promise<IProduct[]> {
+    return this.api.get<ICatalogFromApi>("/product").then((data) => data.items);
+  }
+  postOrder(reqData: IOrder): Promise<IOrderResult> {
+    return this.api.post<IOrderResult>("/order", reqData);
+  }
 }
