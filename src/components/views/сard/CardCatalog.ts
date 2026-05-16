@@ -2,43 +2,41 @@ import { ensureElement } from "../../../utils/utils";
 import { IProduct } from "../../../types";
 import { Card } from "./Card";
 import { categoryMap, CDN_URL } from "../../../utils/constants";
+import { ICardActions } from "../../../types";
 
-type TCardCatalog = Pick<
+export type TCardCatalog = Pick<
   IProduct,
   "id" | "title" | "image" | "category"
 >;
 
-type categoryKey = keyof typeof categoryMap;
-
-interface ICatalogActions {
-  showCard?: () => void;
-}
+type CategoryKey = keyof typeof categoryMap;
 
 export class CardCatalog extends Card<TCardCatalog> {
   protected categoryElement: HTMLElement;
   protected imageElement: HTMLImageElement;
 
-  constructor(container: HTMLElement, actions?: ICatalogActions) {
+  constructor(container: HTMLElement, actions?: ICardActions) {
     super(container);
-    this.categoryElement = ensureElement<HTMLElement>(
-      ".card__category",
-      this.container,
-    );
+
     this.imageElement = ensureElement<HTMLImageElement>(
       ".card__image",
       this.container,
     );
-    if (actions?.showCard) {
-      this.container.addEventListener("click", actions.showCard);
+    this.categoryElement = ensureElement<HTMLElement>(
+      ".card__category",
+      this.container,
+    );
+
+    if (actions?.onClick) {
+      this.container.addEventListener("click", actions.onClick);
     }
   }
 
   set category(value: string) {
     this.categoryElement.textContent = value;
-
     for (const key in categoryMap) {
       this.categoryElement.classList.toggle(
-        categoryMap[key as categoryKey],
+        categoryMap[key as CategoryKey],
         key === value,
       );
     }

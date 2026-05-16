@@ -1,16 +1,17 @@
-import { Component } from "../../base/Component.ts";
-import { ensureElement } from "../../../utils/utils.ts";
+import { Component } from "../../base/Component";
+import { ensureElement } from "../../../utils/utils";
+import { IFormActions } from "../../../types";
 
 interface IForm<T> {
   errors: { [key in keyof T]?: string };
-  buttonDisabled: boolean;
+  isValid: boolean;
 }
 
 export class Form<T extends object> extends Component<IForm<T> & T> {
   protected errorElement: HTMLElement;
   protected buttonForm: HTMLButtonElement;
 
-  constructor(container: HTMLElement) {
+  constructor(container: HTMLElement, actions?: IFormActions) {
     super(container);
 
     const actionsModal = ensureElement<HTMLDivElement>(
@@ -22,13 +23,19 @@ export class Form<T extends object> extends Component<IForm<T> & T> {
       actionsModal,
     );
     this.buttonForm = ensureElement<HTMLButtonElement>("button", actionsModal);
+    this.buttonForm.addEventListener("click", (event) => {
+      event.preventDefault();
+      if (actions?.submitButtonClick) {
+        actions.submitButtonClick();
+      }
+    });
   }
 
   set errors(value: { [key in keyof T]: string }) {
     this.errorElement.textContent = Object.values(value).join(", ");
   }
 
-  set buttonDisabled(value: boolean) {
+  set isValid(value: boolean) {
     this.buttonForm.disabled = !value;
   }
 }

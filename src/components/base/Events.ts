@@ -1,5 +1,26 @@
 // Хорошая практика даже простые типы выносить в алиасы
 // Зато когда захотите поменять это достаточно сделать в одном месте
+export enum EventPresenter {
+    basketOpen = 'basket:open',
+    basketChange = 'basket:change',
+    basketOrder = 'basket:order',
+    buyerChange = 'buyer:change',
+    buyerClear = 'buyer:clear', 
+    catalogAllItems = 'catalog:all-items',
+    catalogSelectedItem = 'catalog:selected-item',
+    cardClick = 'card:click',
+    basketRemoveItem = 'basket:remove-item',
+    cardPreviewButton = 'card-preview:button',
+    formOrderSubmit = 'form-order:submit',
+    formOrderPayment = 'form-order:payment',
+    formOrderAddress = 'form-order:address',
+    formContactsSubmit = 'form-contacts:submit',
+    formContactsEmail = 'form-contacts:email',
+    formContactsPhone = 'form-contacts:phone',
+    successSubmit = 'success:submit',
+    closeModal = 'modal:close',
+}
+
 type EventName = string | RegExp;
 type Subscriber = Function;
 type EmitterEvent = {

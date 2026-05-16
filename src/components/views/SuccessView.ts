@@ -1,13 +1,9 @@
-import { ensureElement } from "../../utils/utils.ts";
-import { Component } from "../base/Component.ts";
+import { ensureElement } from "../../utils/utils";
+import { Component } from "../base/Component";
+import { ISuccessActions } from "../../types";
 
 interface ISuccessView {
   total: number;
-}
-
-interface ISuccessActions {
-  onOrdered?: () => void;
-  closeButton: () => void;
 }
 
 export class SuccessView extends Component<ISuccessView> {
@@ -21,19 +17,17 @@ export class SuccessView extends Component<ISuccessView> {
       ".order-success__description",
       this.container,
     );
-
     this.closeButton = ensureElement<HTMLButtonElement>(
       ".order-success__close",
       this.container,
     );
 
-    this.closeButton.addEventListener("click", (event) => {
-      event.preventDefault();
-
-      if (actions?.closeButton) {
-        actions.closeButton();
-      }
-    });
+    if (actions?.successButtonClickHandler) {
+      this.closeButton.addEventListener(
+        "click",
+        actions.successButtonClickHandler,
+      );
+    }
   }
 
   set total(value: number) {

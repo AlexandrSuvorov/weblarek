@@ -1,24 +1,18 @@
-import { TPayment } from "../../../types/index.ts";
-import { ensureAllElements, ensureElement } from "../../../utils/utils.ts";
-import { Form } from "./Form.ts";
+import { IFormActions, TPayment } from "../../../types";
+import { ensureAllElements, ensureElement } from "../../../utils/utils";
+import { Form } from "./Form";
 
 export interface IFormOrder {
-  payment: "cash" | "card" | null;
+  payment: "card" | "cash" | null;
   address: string;
-}
-
-interface IFormOrderActions {
-  paymentClick: (payment: TPayment) => void;
-  addressChange: (address: string) => void;
-  submitClick: () => void;
 }
 
 export class FormOrder extends Form<IFormOrder> {
   protected paymentButtons: HTMLButtonElement[];
   protected addressInput: HTMLInputElement;
 
-  constructor(container: HTMLElement, actions?: IFormOrderActions) {
-    super(container);
+  constructor(container: HTMLElement, actions?: IFormActions) {
+    super(container, actions);
 
     const paymentButtonsContainer = ensureElement<HTMLDivElement>(
       ".order__buttons",
@@ -35,27 +29,20 @@ export class FormOrder extends Form<IFormOrder> {
 
     this.paymentButtons.forEach((button) => {
       button.addEventListener("click", () => {
-        if (actions?.paymentClick) {
-          actions.paymentClick(button.name as TPayment);
+        if (actions?.paymentButtonClick) {
+          actions.paymentButtonClick(button.name as TPayment);
         }
       });
     });
 
     this.addressInput.addEventListener("input", () => {
-      if (actions?.addressChange) {
-        actions.addressChange(this.addressInput.value);
-      }
-    });
-
-    this.buttonForm.addEventListener("click", (event) => {
-      event.preventDefault();
-      if (actions?.submitClick) {
-        actions.submitClick();
+      if (actions?.addressInputChange) {
+        actions.addressInputChange(this.addressInput.value);
       }
     });
   }
 
-  set payment(value: "card" | "cash" | "") {
+  set payment(value: "card" | "cash" | null) {
     this.paymentButtons.forEach((button) => {
       button.classList.toggle("button_alt-active", button.name === value);
     });

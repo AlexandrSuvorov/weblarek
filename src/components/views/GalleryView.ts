@@ -1,20 +1,23 @@
-import { Component } from '../base/Component.ts';
-import { IEvents } from "../base/Events.ts";
+import { Component } from "../base/Component";
+import { IEvents } from "../base/Events";
 
-interface CatalogData {
-  items: HTMLElement[];
+interface catalogItems {
+  catalog: HTMLElement[];
 }
 
-export class GalleryView extends Component<CatalogData> {
+export class GalleryView extends Component<catalogItems> {
   protected catalogElement: HTMLElement;
 
-    constructor(container: HTMLElement, protected events: IEvents,) {
-        super(container);
+  constructor(
+    container: HTMLElement,
+    protected events: IEvents,
+  ) {
+    super(container);
 
-        this.catalogElement = this.container;
-    };
+    this.catalogElement = this.container;
+  }
 
-    set catalog(items: HTMLElement[]) {
-        this.catalogElement.replaceChildren(...items);
-    };
+  set catalog(items: HTMLElement[]) {
+    this.catalogElement.replaceChildren(...items);
+  }
 }

@@ -1,5 +1,5 @@
 import type { IProduct } from "../../types";
-import { IEvents } from "../base/Events";
+import { IEvents, EventPresenter } from "../base/Events";
 
 export class Basket {
   private items: IProduct[] = [];
@@ -11,21 +11,26 @@ export class Basket {
 
   addItem(item: IProduct) {
     this.items.push(item);
-    this.events.emit("basket:change");
+    this.events.emit(EventPresenter.basketChange);
   }
 
   removeItem(id: string) {
     this.items = this.items.filter((item) => item.id !== id);
-    this.events.emit("basket:change");
+    this.events.emit(EventPresenter.basketChange);
   }
 
-  clearBasket() {
+  clearBasket(): void {
     this.items = [];
-    this.events.emit("basket:change");
+    this.events.emit(EventPresenter.basketChange);
   }
 
   get getTotalPrice(): number {
-    return this.items.reduce((total, item) => total + (item.price ?? 0), 0);
+    return this.items.reduce((acc, item: IProduct) => {
+      if (item.price !== null) {
+        return acc + item.price;
+      }
+      return acc;
+    }, 0);
   }
 
   get getItemsCount(): number {

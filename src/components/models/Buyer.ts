@@ -1,7 +1,7 @@
-import type { IBuyer } from "../../types";
-import { IEvents } from "../base/Events";
+import type { IBuyer, IBuyerErrors } from "../../types";
+import { IEvents, EventPresenter } from "../base/Events";
 
-const emptyData: IBuyer = {
+const emptyData = {
   payment: null,
   address: "",
   phone: "",
@@ -27,40 +27,28 @@ export class Buyer {
       };
     }
     Object.assign(this.buyer, Buyer);
-    this.events.emit(`buyer:change`);
+    this.events.emit(EventPresenter.buyerChange);
   }
 
-  clearItem() {
+  clearItem(): void {
     this.buyer = { ...emptyData };
-    this.events.emit(`buyer:clear`);
+    this.events.emit(EventPresenter.buyerClear);
   }
 
-  validateItem(): Partial<Record<keyof IBuyer, string>> {
-    const errors: Partial<Record<keyof IBuyer, string>> = {};
-
-    if (!this.buyer) {
-      errors.payment = "Данные покупателя отсутствуют";
-      return errors;
+  validateItem(): IBuyerErrors {
+    const errors: IBuyerErrors = {};
+    if (!this.buyer || this.buyer.address === "") {
+      errors.address = "Поле 'Адрес' не может быть пустым";
     }
-
-    const { address, phone, email, payment } = this.buyer;
-
-    if (!address?.trim()) {
-      errors.address = "Адрес обязателен";
+    if (!this.buyer || this.buyer.phone === "") {
+      errors.phone = "Поле 'Телефон' не может быть пустым";
     }
-
-    if (!phone?.trim()) {
-      errors.phone = "Телефон обязателен";
+    if (!this.buyer || this.buyer.email === "") {
+      errors.email = "Поле 'Эл. почта' не может быть пустым";
     }
-
-    if (!email?.trim()) {
-      errors.email = "Email обязателен";
+    if (!this.buyer || this.buyer.payment === null) {
+      errors.payment = "Поле 'Способ оплаты' не может быть пустым";
     }
-
-    if (!payment) {
-      errors.payment = "Способ оплаты обязателен";
-    }
-
     return errors;
   }
 }

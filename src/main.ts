@@ -4,9 +4,9 @@ import { Basket } from "./components/models/Basket";
 import { Buyer } from "./components/models/Buyer";
 import { Catalog } from "./components/models/Catalog";
 
-import { CardCatalog } from "./components/views/card/CardCatalog";
-import { CardInBasket } from "./components/views/card/CardInBasket";
-import { CardPreview } from "./components/views/card/CardPreview";
+import { CardCatalog } from "./components/views/сard/CardCatalog";
+import { CardInBasket } from "./components/views/сard/CardInBasket";
+import { CardPreview } from "./components/views/сard/CardPreview";
 
 import {
   FormContacts,
@@ -24,7 +24,7 @@ import { API_URL } from "./utils/constants";
 import { Api } from "./components/base/Api";
 import { CatalogApi } from "./components/models/CatalogApi";
 
-import { EventEmitter } from "./components/base/Events";
+import { EventEmitter, EventPresenter } from "./components/base/Events";
 import { cloneTemplate, ensureElement } from "./utils/utils";
 
 import type { IProduct, TPayment } from "./types";
@@ -55,6 +55,42 @@ const modal = new ModalView(modalElement, events);
 const header = new HeaderView(headerElement, events);
 const basket = new BasketView(cloneTemplate(basketTemplate), events);
 
+const cardPreview = new CardPreview(cloneTemplate(cardPreviewTemplate), {
+  onPreviewButtonClick: () => {
+    events.emit(EventPresenter.cardPreviewButton);
+  },
+});
+
+const formOrder = new FormOrder(cloneTemplate(orderFormTemplate), {
+  paymentButtonClick: (payment) => {
+    events.emit(EventPresenter.formOrderPayment, { payment });
+  },
+  addressInputChange: (address) => {
+    events.emit(EventPresenter.formOrderAddress, { address });
+  },
+  submitButtonClick: () => {
+    events.emit(EventPresenter.formOrderSubmit);
+  },
+});
+
+const formContacts = new FormContacts(cloneTemplate(contactsFormTemplate), {
+  emailInputChange: (email) => {
+    events.emit(EventPresenter.formContactsEmail, { email });
+  },
+  phoneInputChange: (phone) => {
+    events.emit(EventPresenter.formContactsPhone, { phone });
+  },
+  submitButtonClick: () => {
+    events.emit(EventPresenter.formContactsSubmit);
+  },
+});
+
+const successView = new SuccessView(cloneTemplate(successTemplate), {
+  successButtonClickHandler: () => {
+    events.emit(EventPresenter.successSubmit);
+  },
+});
+
 api
   .getCatalogItems()
   .then((data) => {
@@ -62,87 +98,53 @@ api
   })
   .catch();
 
-const cardPreview = new CardPreview(cloneTemplate(cardPreviewTemplate), {
-  onPurchaseClick: () => {
-    events.emit("card:select");
-  },
-});
-
-const formOrder = new FormOrder(cloneTemplate(orderFormTemplate), {
-  paymentClick: (payment) => {
-    events.emit("form-order:payment", { payment });
-  },
-  addressChange: (address) => {
-    events.emit("form-order:address", { address });
-  },
-  submitClick: () => {
-    events.emit("form-order:submit");
-  },
-});
-
-const formContacts = new FormContacts(cloneTemplate(contactsFormTemplate), {
-  emailChange: (email) => {
-    events.emit("form-contacts:email", { email });
-  },
-  phoneChange: (phone) => {
-    events.emit("form-contacts:phone", { phone });
-  },
-  submitClick: () => {
-    events.emit("form-contacts:submit");
-  },
-});
-
-const successView = new SuccessView(cloneTemplate(successTemplate), {
-  closeButton: () => {
-    events.emit(`success:submit`);
-  },
-});
-
-events.on(`catalog:changed`, () => {
+events.on(EventPresenter.catalogAllItems, () => {
   const itemCards = catalogModel.catalogItems.map((item) => {
-    const showCard = () => {
-      events.emit(`card:select`, { product: item });
+    const onClick = () => {
+      events.emit(EventPresenter.cardClick, { product: item });
     };
     const card = new CardCatalog(cloneTemplate(cardCatalogTemplate), {
-      showCard,
+      onClick,
     });
     return card.render(item);
   });
   gallery.render({
-    items: itemCards,
+    catalog: itemCards,
   });
 });
 
-events.on<{ product: IProduct }>(`card:select`, ({ product }) => {
-  catalogModel.selectedProduct = product.id;
+events.on<{ product: IProduct }>(EventPresenter.cardClick, ({ product }) => {
+  catalogModel.selectedProductItem = product.id;
 });
 
-function getCardButton(product: IProduct, isInBasket: boolean) {
+function getCardButtonState(product: IProduct, isInBasket: boolean) {
   let buttonText = "Купить";
   let isDisabled = false;
+
   if (product.price === null) {
     buttonText = "Недоступно";
     isDisabled = true;
   } else if (isInBasket) {
     buttonText = "Удалить из корзины";
   }
+
   return { buttonText, isDisabled };
 }
 
-events.on("card:select", () => {
-  const product = catalogModel.selectedProduct;
+events.on(EventPresenter.catalogSelectedItem, () => {
+  const product = catalogModel.selectedProductItem;
   if (product) {
     const isInBasket = basketModel.hasItem(product.id);
-    const { buttonText, isDisabled } = getCardButton(product, isInBasket);
+    const { buttonText, isDisabled } = getCardButtonState(product, isInBasket);
 
     const preview = cardPreview.render({ ...product, buttonText, isDisabled });
-    modal.render({ element: preview });
+    modal.render({ content: preview });
     modal.open();
   }
 });
 
-events.on(`card-preview:change-click`, () => {
-  const product = catalogModel.selectedProduct;
+events.on(EventPresenter.cardPreviewButton, () => {
+  const product = catalogModel.selectedProductItem;
   if (product) {
     if (basketModel.hasItem(product.id)) {
       basketModel.removeItem(product.id);
@@ -153,12 +155,12 @@ events.on(`card-preview:change-click`, () => {
   }
 });
 
-events.on(`basket:change`, () => {
+events.on(EventPresenter.basketChange, () => {
   header.render({ counter: basketModel.getItemsCount });
-  const selectedProduct = catalogModel.selectedProduct;
+  const selectedProduct = catalogModel.selectedProductItem;
   if (selectedProduct) {
     const isInBasket = basketModel.hasItem(selectedProduct.id);
-    const { buttonText, isDisabled } = getCardButton(
+    const { buttonText, isDisabled } = getCardButtonState(
       selectedProduct,
       isInBasket,
     );
@@ -167,8 +169,8 @@ events.on(`basket:change`, () => {
 
   const cardBasketArray = basketModel.basketItems.map((item, index) => {
     const cardBasket = new CardInBasket(cloneTemplate(cardBasketTemplate), {
-      deleteButtonElement: () => {
-        events.emit(`basket:remove-product`, { product: item });
+      removeItemClick: () => {
+        events.emit(EventPresenter.basketRemoveItem, { product: item });
       },
     });
     return cardBasket.render({ ...item, index: index + 1 });
@@ -177,23 +179,26 @@ events.on(`basket:change`, () => {
   basket.render({
     basket: cardBasketArray,
     total: basketModel.getTotalPrice,
-    buttonDisabled: basketModel.getItemsCount > 0,
+    isValid: basketModel.getItemsCount > 0,
   });
 });
 
-events.on(`basket:open`, () => {
+events.on(EventPresenter.basketOpen, () => {
   modal.render({
-    element: basket.render({ buttonDisabled: basketModel.getItemsCount > 0 }),
+    content: basket.render({ isValid: basketModel.getItemsCount > 0 }),
   });
   modal.open();
 });
 
-events.on<{ product: IProduct }>(`basket:remove-product`, ({ product }) => {
-  basketModel.removeItem(product.id);
-  modal.render({ element: basket.render() });
-});
+events.on<{ product: IProduct }>(
+  EventPresenter.basketRemoveItem,
+  ({ product }) => {
+    basketModel.removeItem(product.id);
+    modal.render({ content: basket.render() });
+  },
+);
 
-events.on(`basket:order`, () => {
+events.on(EventPresenter.basketOrder, () => {
   const data = buyerModel.buyerItem;
   const errors = buyerModel.validateItem();
 
@@ -207,32 +212,38 @@ events.on(`basket:order`, () => {
   const isValid = Object.keys(orderErrors).length === 0;
 
   modal.render({
-    element: formOrder.render({
+    content: formOrder.render({
       payment: data?.payment ?? null,
       address: data?.address ?? "",
       errors: orderErrors,
-      buttonDisabled: isValid,
+      isValid: isValid,
     }),
   });
 });
 
-events.on(`form-order:payment`, ({ payment }: { payment: TPayment }) => {
-  buyerModel.buyerItem = { payment };
-});
+events.on(
+  EventPresenter.formOrderPayment,
+  ({ payment }: { payment: TPayment }) => {
+    buyerModel.buyerItem = { payment };
+  },
+);
 
-events.on(`form-order:address`, ({ address }: { address: string }) => {
-  buyerModel.buyerItem = { address };
-});
+events.on(
+  EventPresenter.formOrderAddress,
+  ({ address }: { address: string }) => {
+    buyerModel.buyerItem = { address };
+  },
+);
 
-events.on(`form-contacts:email`, ({ email }: { email: string }) => {
+events.on(EventPresenter.formContactsEmail, ({ email }: { email: string }) => {
   buyerModel.buyerItem = { email };
 });
 
-events.on(`form-contacts:phone`, ({ phone }: { phone: string }) => {
+events.on(EventPresenter.formContactsPhone, ({ phone }: { phone: string }) => {
   buyerModel.buyerItem = { phone };
 });
 
-events.on(`buyer:change`, () => {
+events.on(EventPresenter.buyerChange, () => {
   const data = buyerModel.buyerItem;
   const errors = buyerModel.validateItem();
 
@@ -249,7 +260,7 @@ events.on(`buyer:change`, () => {
     payment: data?.payment ?? null,
     address: data?.address,
     errors: orderErrors,
-    buttonDisabled: orderIsValid,
+    isValid: orderIsValid,
   });
 
   const contactsErrors: Partial<Record<keyof IFormContacts, string>> =
@@ -265,11 +276,11 @@ events.on(`buyer:change`, () => {
     email: data?.email,
     phone: data?.phone,
     errors: contactsErrors,
-    buttonDisabled: contactsIsValid,
+    isValid: contactsIsValid,
   });
 });
 
-events.on(`form-order:submit`, () => {
+events.on(EventPresenter.formOrderSubmit, () => {
   const data = buyerModel.buyerItem;
   const errors = buyerModel.validateItem();
   const contactsErrors: Partial<Record<keyof IFormContacts, string>> =
@@ -282,29 +293,26 @@ events.on(`form-order:submit`, () => {
   const isValid = Object.keys(contactsErrors).length === 0;
 
   modal.render({
-    element: formContacts.render({
+    content: formContacts.render({
       email: data?.email,
       phone: data?.phone,
       errors: contactsErrors,
-      buttonDisabled: isValid,
+      isValid: isValid,
     }),
   });
 });
 
-events.on(`form-contacts:submit`, () => {
+events.on(EventPresenter.formContactsSubmit, () => {
   const errors = buyerModel.validateItem();
+
   if (Object.keys(errors).length > 0) {
     return;
   }
-  const data = buyerModel.buyerItem!;
+  const data = buyerModel.buyerItem;
   const ids = basketModel.basketItems.map((item) => item.id);
-
   api
     .postOrder({
-      payment: data.payment! as TPayment,
-      address: data.address!,
-      phone: data.phone!,
-      email: data.email!,
+      ...data,
       total: basketModel.getTotalPrice,
       items: ids,
     })
@@ -313,17 +321,17 @@ events.on(`form-contacts:submit`, () => {
       basketModel.clearBasket();
       modal.close();
       if ("total" in res) {
-        modal.render({ element: successView.render({ total: res.total }) });
+        modal.render({ content: successView.render({ total: res.total }) });
         modal.open();
       }
     })
     .catch();
 });
 
-events.on(`success:submit`, () => {
+events.on(EventPresenter.successSubmit, () => {
   modal.close();
 });
 
-events.on(`modal:close`, () => {
+events.on(EventPresenter.closeModal, () => {
   modal.close();
 });
